@@ -1,16 +1,16 @@
-var express = require("express");
-var cors = require("cors");
+const express = require("express");
+const cors = require("cors");
 const { generateToken04 } = require("./server/zegoServerAssistant");
 
-var PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;
 
 if (!(process.env.APP_ID && process.env.SERVER_SECRET)) {
   throw new Error("You must define an APP_ID and SERVER_SECRET");
 }
-var APP_ID = process.env.APP_ID;
-var SERVER_SECRET = process.env.SERVER_SECRET;
+const APP_ID = process.env.APP_ID;
+const SERVER_SECRET = process.env.SERVER_SECRET;
 
-var app = express();
+const app = express();
 
 function nocache(req, res, next) {
   res.header("Cache-Control", "private, no-cache, no-store, must-revalidate");
@@ -19,27 +19,43 @@ function nocache(req, res, next) {
   next();
 }
 
-var generateAccessToken = function (req, resp) {
-  resp.header("Access-Control-Allow-Origin", "*");
-
-  var expiredTs = req.query.expired_ts;
+const generateAccessToken = function (req, resp) {
+  let expiredTs = req.query.expired_ts;
   if (!expiredTs) {
     expiredTs = 3600;
   }
 
-  var uid = req.query.uid;
-  if (!uid) {
-    return resp.status(500).json({ error: "user id is required" });
+  const userID = req.query.userID;
+  if (!userID) {
+    return resp.status(500).json({ error: "userID is required" });
+  }
+
+  const roomID = req.query.roomID;
+  if (!roomID) {
+    return resp.status(500).json({ error: "roomID  is required" });
+  }
+
+  let userName = req.query.userName;
+  if (!userName) {
+    userName = userID;
   }
 
   const token = generateToken04(
     parseInt(APP_ID),
-    uid,
+    userID,
     SERVER_SECRET,
     parseInt(expiredTs),
     ""
   );
-  return resp.json({ token: token });
+
+  return resp.json({
+    token:
+      token +
+      "#" +
+      Buffer.from(
+        JSON.stringify({ userID, roomID, userName, APP_ID })
+      ).toString("base64"),
+  });
 };
 app.use(cors());
 app.get("/access_token", nocache, generateAccessToken);
