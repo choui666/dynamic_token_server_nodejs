@@ -53,7 +53,7 @@ const generateAccessToken = function (req, resp) {
       token +
       "#" +
       Buffer.from(
-        JSON.stringify({ userID, roomID, userName, APP_ID })
+        JSON.stringify({ userID, roomID, userName, appID: APP_ID })
       ).toString("base64"),
   });
 };
